@@ -49,7 +49,7 @@ while true; do
 
             # If the id isn't empty, then it was a match!
             if [ -n "$id" ]; then
-                "$xinput" map-to-output "$id" "$screen" &
+                "$xinput" map-to-output "$id" "$screen"
             fi
         done
 
