@@ -1,0 +1,63 @@
+#!/bin/sh
+
+if [[ "$1" == "--help" ]]; then
+    echo "Rotates the screen and touch input devices based on rotation sensor data"
+    echo -e "       Usage:  $(basename $0) [--once]\n"
+    echo -e "       --once  Executes the check and rotation once then exits\n"
+    echo -e "               Started with no parameters, the script will continually"
+    echo -e "               check and rotate the screen and inputs periodically."
+    exit 1
+fi
+
+#################
+
+sensor="accel_3d"
+screen="eDP-1"
+inputs=( "NTRG0001:01 1B96:1B05"
+         "NTRG0001:01 1B96:1B05 Pen stylus"
+         "NTRG0001:01 1B96:1B05 Pen eraser" )
+
+# Time between rotation checks
+millis="1000"
+
+# Sensor path
+spath="/sys/bus/iio/devices/iio:device*"
+
+xinput=$(which xinput)
+xrandr=$(which xrandr)
+
+#################
+
+# Get the directory name of the running script
+dir=$(dirname "${BASH_SOURCE[0]}")
+
+# Get the orientation that the screen is currently displaying
+prevorient=$("$xrandr" -q --verbose | grep "$screen" | cut -d' ' -f6)
+
+while true; do
+    # Get the rotation according to the sensors
+    orientation=$("$dir"/orientation "$sensor" "$spath")
+
+    if [ "$orientation" != "flat" ] && [ "$orientation" != "$prevorient" ]; then
+        prevorient=$orientation
+        echo "Rotating to $orientation"
+        "$xrandr" --output "$screen" --rotate "$orientation" &
+
+        xins="$($xinput)"
+        for input in "${inputs[@]}"; do
+            id=$(perl -ne "/$input *\tid=([0-9]+)\t/ && print \$1" <<< "$xins")
+
+            # If the id isn't empty, then it was a match!
+            if [ -n "$id" ]; then
+                "$xinput" map-to-output "$id" "$screen" &
+            fi
+        done
+
+        ## If the postrotate script exists, execute it
+        [ -e "$dir/event/postrotate.sh" ] && "$dir/event/postrotate.sh" "$orientation" &
+    fi
+
+    [ "$1" == "--once" ] && exit 0
+
+    sleep $(( $millis / 1000 ))
+done

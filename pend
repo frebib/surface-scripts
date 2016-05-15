@@ -1,0 +1,20 @@
+#!/bin/sh
+
+dir=$(dirname "${BASH_SOURCE[0]}")
+
+#######################
+
+onclick="echo Click && $dir/event/onpenclick.sh &"
+onhold="echo Hold && $dir/event/onpenhold.sh &"
+
+#######################
+clickregex="> 02 8[01] 20 0F 00 0B 00 04 00 1B 1[D9] 00 08 00 6F 00 00 00 00 00"
+holdregex="> 02 8[01] 20 0F 00 0B 00 04 00 1B 1[D9] 00 08 00 6D 00 00 00 00 00"
+
+coproc sudo hcidump -R att
+
+while read -u ${COPROC[0]} -a arr; do
+    event=${arr[@]}
+    [[ $event =~ $clickregex ]] && eval $onclick
+    [[ $event =~ $holdregex ]] && eval $onhold
+done

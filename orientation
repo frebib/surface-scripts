@@ -1,0 +1,62 @@
+#!/bin/sh
+
+if [[ "$1" == "--help" ]]; then
+    echo "Gets the orientation of the device"
+    echo "      Usage:   $(basename $0) [sensor_name] [/path/to/all/sensors]"
+    echo "      Example: $(basename $0) rotation /sys/bus/iio/devices/iio:device*"
+    echo -e "\n      Started with no parameters, the default values of 'accel_3d' and '/sys/bus/iio/devices/iio:device*' will be used"
+    exit 1
+fi
+
+[ -z "$1" ] && sensor="accel_3d" || sensor="$1"
+[ -z "$2" ] && spath="/sys/bus/iio/devices/iio:device*" || spath="$2"
+
+# Find the correct sensor directory
+for dir in $spath; do
+    if [ $(cat "$dir/name" | grep "$sensor") ]; then
+        sensordir=$dir
+    fi
+done
+
+# Usage:
+#  > getrotation /sensor/path
+# Prints:
+#  > x y z
+getrotation() {
+    for file in $1/*; do
+        if [[ $file =~ $1/in_accel_[xyz]_raw ]]; then
+            echo -n $(cat "$file")' '
+        fi
+    done
+}
+
+# Converts a ushort to a signed
+# short with 2s complement
+twoscomp() {
+    raw=$1
+    if [ $(( $raw & (1 << (16 - 1)) )) -ne 0 ]; then
+        raw=$(( $raw - (1 << 16) ))
+    fi
+    echo "$raw"
+}
+
+# Prints the current screen orientation
+getorientation() {
+    rotation=$(getrotation $1)
+
+    IFS=" " read -r -a accel <<< "$rotation"
+
+    x=$(twoscomp "${accel[0]}") ax=${x#-}
+    y=$(twoscomp "${accel[1]}") ay=${y#-}
+    z=$(twoscomp "${accel[2]}") az=${z#-}
+
+    if [[ "$az" -gt "$((4 * $ax))" && "$az" -gt "$((4 * $ay))" ]]; then
+        echo flat
+    elif [[ $(( 3 * $ay)) -gt $((2 * $ax)) ]]; then
+        [[ $y -gt 0 ]] && echo inverted || echo normal
+    else
+        [[ $x -gt 0 ]] && echo left || echo right
+    fi
+}
+
+getorientation "$sensordir"
