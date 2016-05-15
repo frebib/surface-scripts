@@ -20,6 +20,9 @@ inputs=( "NTRG0001:01 1B96:1B05"
 # Time between rotation checks
 millis="1000"
 
+# Rotation Lock file
+lock="/tmp/rotlock"
+
 # Sensor path
 spath="/sys/bus/iio/devices/iio:device*"
 
@@ -34,7 +37,13 @@ dir=$(dirname "${BASH_SOURCE[0]}")
 # Get the orientation that the screen is currently displaying
 prevorient=$("$xrandr" -q --verbose | grep "$screen" | cut -d' ' -f6)
 
+# Create lock file if not exists
+[[ -p $lock ]] || echo "unlocked" > "$lock"
+
 while true; do
+    # Check if rotation lock is set
+    [ $(<$lock) == "locked" ] && continue
+
     # Get the rotation according to the sensors
     orientation=$("$dir"/orientation "$sensor" "$spath")
 
