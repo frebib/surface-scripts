@@ -14,7 +14,7 @@ This script is a rewrite of the python script [surfacetools/autorotate](https://
 
 ### Pend
 A bluetooth daemon that listens to bluetooth packets from the Surface Pen devices and opens a program when the button is pressed or held down.  
-*Note: This script runs hcidump as sudo to allow reading of bluetooth packets. I advice for convenience sake that hcidump is set as NOPASSWD in /etc/sudoers or run as an elevated system service to prevent password prompts every boot.*
+*Note: This script runs hcidump as sudo to allow reading of bluetooth packets. I advise for convenience sake that hcidump is set as NOPASSWD in /etc/sudoers or run as an elevated system service to prevent password prompts every boot.*
 
 ### Orientation
 Queries the sensors and calculates the actual orientation of the device, printing the output. This script is used by `rotationd` to determine the real orientation to rotate the screen to
