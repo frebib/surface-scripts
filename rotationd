@@ -12,7 +12,7 @@ fi
 #################
 
 sensor="accel_3d"
-screen="eDP-1"
+screen="eDP1"
 inputs=( "NTRG0001:01 1B96:1B05"
          "NTRG0001:01 1B96:1B05 Pen stylus"
          "NTRG0001:01 1B96:1B05 Pen eraser" )
